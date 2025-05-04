@@ -1,8 +1,6 @@
-# pomodoro CLI
+# Pomodoro CLI
 
 A beautiful command line Pomodoro Timer written in Python.
-
-![pomodoro CLI Screenshot](screenshot.png)
 
 ## Features
 
@@ -40,6 +38,22 @@ python3 pomodoro.py
 - `--cycles N`: Set number of work cycles before a long break (default: 4)
 - `--no-curses`: Use simple terminal mode instead of curses interface
 - `--debug N`: Enable debug mode with time acceleration factor N (e.g., 10, 20, 60)
+
+### Curses vs Terminal Mode
+
+The app has two display modes:
+
+**Curses Mode (Default)**: 
+- Uses the Python curses library for a more interactive interface
+- Provides smoother updates and better visual appearance
+- Handles window resizing
+- Better key input handling
+
+**Terminal Mode** (activated with `--no-curses`):
+- Uses simple terminal output with ANSI color codes
+- More compatible with different terminal environments
+- Less resource-intensive
+- May be preferable in certain terminal emulators or when SSH'ing into a remote machine
 
 ### Examples
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-pomodoro CLI - A beautiful command line Pomodoro Timer
+Pomodoro CLI - A beautiful command line Pomodoro Timer
 """
 import time
 import sys
@@ -248,7 +248,7 @@ class PomodoroTimer:
             
             color = self.get_display_color()
             
-            print(f"\n{Color.BOLD}🍅 pomodoro CLI 🍅{Color.RESET}")
+            print(f"\n{Color.BOLD}🍅 Pomodoro CLI 🍅{Color.RESET}")
             print(f"\n{color}{Color.BOLD}{self.get_phase_name()}{Color.RESET}")
             
             print(f"\n{self.get_ascii_tomato()}")
@@ -271,7 +271,7 @@ class PomodoroTimer:
             center_y = height // 2 - 5
             center_x = width // 2
             
-            self.stdscr.addstr(center_y - 3, center_x - 10, "🍅 pomodoro CLI 🍅", curses.A_BOLD)
+            self.stdscr.addstr(center_y - 3, center_x - 10, "🍅 Pomodoro CLI 🍅", curses.A_BOLD)
             
             # Phase name
             phase_name = self.get_phase_name()
@@ -410,7 +410,7 @@ def terminal_main(settings):
 
 def parse_arguments():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description='pomodoro CLI - A beautiful command line Pomodoro Timer')
+    parser = argparse.ArgumentParser(description='Pomodoro CLI - A beautiful command line Pomodoro Timer')
     
     parser.add_argument('--work', type=int, default=25,
                         help='Work duration in minutes (default: 25)')
@@ -440,7 +440,7 @@ def main():
         time_acceleration=args.debug
     )
     
-    print(f"{Color.BOLD}🍅 pomodoro CLI 🍅{Color.RESET}")
+    print(f"{Color.BOLD}🍅 Pomodoro CLI 🍅{Color.RESET}")
     print(f"Starting Pomodoro timer with:")
     print(f"- Work: {args.work} minutes")
     print(f"- Short break: {args.short_break} minutes")
