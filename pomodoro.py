@@ -16,17 +16,41 @@ from curses import wrapper
 
 # Import pync for macOS notifications if available
 NOTIFICATIONS_AVAILABLE = False
-try:
-    if platform.system() == 'Darwin':  # Check if running on macOS
+
+# Debug pync import - will be set by command line argument
+DEBUG_IMPORT = False
+
+if platform.system() == 'Darwin':  # Only attempt on macOS
+    try:
+        if DEBUG_IMPORT:
+            print("DEBUG: Attempting to import pync...")
+            # Check if pync is installed
+            import pkg_resources
+            pkg_resources.get_distribution("pync")
+            print("DEBUG: pync package is installed according to pkg_resources")
+        
+        # Try importing pync
         import pync
-        NOTIFICATIONS_AVAILABLE = True
-except ImportError:
-    # Provide helpful message if pync is not installed
-    if platform.system() == 'Darwin':
+        
+        # Verify pync works by checking a required attribute
+        if hasattr(pync, 'notify'):
+            NOTIFICATIONS_AVAILABLE = True
+            if DEBUG_IMPORT:
+                print("DEBUG: pync imported successfully and has notify attribute")
+        else:
+            if DEBUG_IMPORT:
+                print("DEBUG: pync imported but missing notify attribute")
+    
+    except (ImportError, pkg_resources.DistributionNotFound) as e:
+        # Provide helpful message if pync is not installed
         print("NOTE: For macOS desktop notifications, install pync:\n"
               "pip install pync\n"
               "or run: pip install -r requirements.txt")
-    pass
+        if DEBUG_IMPORT:
+            print(f"DEBUG: Error importing pync: {e}")
+    except Exception as e:
+        if DEBUG_IMPORT:
+            print(f"DEBUG: Unexpected error with pync: {e}")
 
 # ANSI color codes
 class Color:
@@ -234,10 +258,18 @@ class PomodoroTimer:
                 # Available sounds on macOS: Basso, Blow, Bottle, Frog, Funk, Glass, Hero, Morse, Ping, Pop, Purr, 
                 # Sosumi, Submarine, Tink, etc.
                 notification_sound = sound or 'Ping'
-                pync.notify(message, title=title, sound=notification_sound, 
-                           appIcon='🍅', contentImage='🍅')
+                
+                # Debug log
+                if DEBUG_IMPORT:
+                    print(f"DEBUG: Sending notification: '{title}' with sound '{notification_sound}'")
+                
+                # Call pync's notify function
+                pync.notify(message, title=title, sound=notification_sound)
         except Exception as e:
             print(f"Failed to send notification: {e}", file=sys.stderr)
+            if DEBUG_IMPORT:
+                import traceback
+                traceback.print_exc()
 
     def get_display_color(self):
         """Get the color based on the current state"""
@@ -506,13 +538,34 @@ def parse_arguments():
                         help='Enable desktop notifications (default if supported)')
     notifications_group.add_argument('--no-notify', action='store_false', dest='enable_notifications',
                         help='Disable desktop notifications')
+    notifications_group.add_argument('--debug-notify', action='store_true',
+                        help='Enable notification debugging output')
     parser.set_defaults(enable_notifications=True)
     
     return parser.parse_args()
 
 def main():
     """Main entry point"""
+    global DEBUG_IMPORT  # Access global debug flag
+    
     args = parse_arguments()
+    
+    # Handle debug notification flag
+    if args.debug_notify:
+        DEBUG_IMPORT = True
+        print("Notification debugging enabled")
+        
+        # Re-import pync with debugging if on macOS
+        if platform.system() == 'Darwin':
+            print("DEBUG: Re-checking pync...")
+            try:
+                import pync
+                print(f"DEBUG: pync version: {getattr(pync, '__version__', 'unknown')}")
+                print(f"DEBUG: pync location: {pync.__file__}")
+                print(f"DEBUG: pync has notify: {hasattr(pync, 'notify')}")
+                print(f"DEBUG: pync dir: {dir(pync)}")
+            except ImportError as e:
+                print(f"DEBUG: Error importing pync: {e}")
     
     # Create settings from arguments
     settings = PomodoroSettings(
