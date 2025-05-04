@@ -9,6 +9,7 @@ import argparse
 import threading
 import datetime
 import platform
+import subprocess
 from dataclasses import dataclass
 from enum import Enum, auto
 import curses
@@ -24,10 +25,6 @@ if platform.system() == 'Darwin':  # Only attempt on macOS
     try:
         if DEBUG_IMPORT:
             print("DEBUG: Attempting to import pync...")
-            # Check if pync is installed
-            import pkg_resources
-            pkg_resources.get_distribution("pync")
-            print("DEBUG: pync package is installed according to pkg_resources")
         
         # Try importing pync
         import pync
@@ -41,7 +38,7 @@ if platform.system() == 'Darwin':  # Only attempt on macOS
             if DEBUG_IMPORT:
                 print("DEBUG: pync imported but missing notify attribute")
     
-    except (ImportError, pkg_resources.DistributionNotFound) as e:
+    except ImportError as e:
         # Provide helpful message if pync is not installed
         print("NOTE: For macOS desktop notifications, install pync:\n"
               "pip install pync\n"
@@ -551,7 +548,7 @@ def main():
     args = parse_arguments()
     
     # Handle debug notification flag
-    if args.debug_notify:
+    if getattr(args, 'debug_notify', False):
         DEBUG_IMPORT = True
         print("Notification debugging enabled")
         
@@ -559,13 +556,41 @@ def main():
         if platform.system() == 'Darwin':
             print("DEBUG: Re-checking pync...")
             try:
-                import pync
-                print(f"DEBUG: pync version: {getattr(pync, '__version__', 'unknown')}")
-                print(f"DEBUG: pync location: {pync.__file__}")
-                print(f"DEBUG: pync has notify: {hasattr(pync, 'notify')}")
-                print(f"DEBUG: pync dir: {dir(pync)}")
-            except ImportError as e:
-                print(f"DEBUG: Error importing pync: {e}")
+                # Print Python path for debugging
+                print(f"DEBUG: Python path: {sys.path}")
+                
+                # Try importing pync
+                import_success = False
+                try:
+                    import pync
+                    import_success = True
+                    print(f"DEBUG: pync successfully imported")
+                    print(f"DEBUG: pync version: {getattr(pync, '__version__', 'unknown')}")
+                    print(f"DEBUG: pync location: {pync.__file__}")
+                    print(f"DEBUG: pync has notify: {hasattr(pync, 'notify')}")
+                    print(f"DEBUG: pync dir: {dir(pync)}")
+                except ImportError as e:
+                    print(f"DEBUG: Error importing pync: {e}")
+                
+                if not import_success:
+                    print("DEBUG: Checking pip for pync installation...")
+                    try:
+                        # Check if pync is installed
+                        result = subprocess.run([sys.executable, "-m", "pip", "list"], 
+                                              capture_output=True, text=True)
+                        print("Installed packages:")
+                        found_pync = False
+                        for line in result.stdout.split('\n'):
+                            if 'pync' in line.lower():
+                                found_pync = True
+                                print(f"  {line}")
+                        
+                        if not found_pync:
+                            print("DEBUG: pync not found in pip list")
+                    except Exception as e:
+                        print(f"DEBUG: Error checking pip: {e}")
+            except Exception as e:
+                print(f"DEBUG: Unexpected error during pync debug: {e}")
     
     # Create settings from arguments
     settings = PomodoroSettings(
