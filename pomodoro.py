@@ -8,10 +8,20 @@ import os
 import argparse
 import threading
 import datetime
+import platform
 from dataclasses import dataclass
 from enum import Enum, auto
 import curses
 from curses import wrapper
+
+# Import pync for macOS notifications if available
+NOTIFICATIONS_AVAILABLE = False
+try:
+    if platform.system() == 'Darwin':  # Check if running on macOS
+        import pync
+        NOTIFICATIONS_AVAILABLE = True
+except ImportError:
+    pass
 
 # ANSI color codes
 class Color:
@@ -41,6 +51,7 @@ class PomodoroSettings:
     long_break_duration: int = 15 * 60  # 15 minutes
     cycles_before_long_break: int = 4
     time_acceleration: int = 1         # Default: normal speed
+    enable_notifications: bool = True  # Enable desktop notifications
     
 class PomodoroTimer:
     def __init__(self, settings=None, stdscr=None):
@@ -105,13 +116,48 @@ class PomodoroTimer:
         last_update_time = 0
         update_interval = 0.5  # Update display every 0.5 seconds
         
+        # For notification warning when close to end of session
+        notification_sent = False
+        warning_threshold = 60  # Send notification when 60 seconds remaining
+        
         while self.is_running:
             if not self.pause_timer:
                 if self.time_left <= 0:
                     self._play_bell()
+                    
+                    # Determine which phase just ended
+                    current_phase = self.current_state
+                    
+                    # Transition to next state
                     self._transition_to_next_state()
+                    
+                    # Send appropriate notification based on phase transition
+                    if current_phase == State.WORK:
+                        # Just finished work phase
+                        break_type = "long break" if self.cycles_completed % self.settings.cycles_before_long_break == 0 else "short break"
+                        self._send_notification(
+                            "Work Session Complete! 🎉",
+                            f"Time for a {break_type}. Well done!",
+                            sound="Glass"
+                        )
+                    elif current_phase == State.SHORT_BREAK:
+                        # Just finished short break
+                        self._send_notification(
+                            "Break Finished",
+                            "Time to focus again!",
+                            sound="Ping"
+                        )
+                    elif current_phase == State.LONG_BREAK:
+                        # Just finished long break
+                        self._send_notification(
+                            "Break Finished",
+                            "Ready for a new Pomodoro cycle?",
+                            sound="Ping"
+                        )
+                    
                     self.start_time = time.time()
                     last_update_time = 0  # Force update after state transition
+                    notification_sent = False  # Reset notification flag for new session
                 else:
                     time.sleep(0.05)  # Smaller sleep for smoother acceleration
                     
@@ -129,6 +175,15 @@ class PomodoroTimer:
                         self.time_left = max(0, self.settings.short_break_duration - int(accelerated_elapsed))
                     else:  # Long break
                         self.time_left = max(0, self.settings.long_break_duration - int(accelerated_elapsed))
+                    
+                    # Send warning notification when approaching end of session
+                    if self.current_state == State.WORK and self.time_left <= warning_threshold and not notification_sent:
+                        self._send_notification(
+                            "Almost Done!",
+                            f"Less than a minute left in this Pomodoro.",
+                            sound="Submarine"
+                        )
+                        notification_sent = True
                     
                     # Only update display at specified intervals to prevent flickering
                     current_time = time.time()
@@ -163,6 +218,21 @@ class PomodoroTimer:
         for _ in range(3):  # Ring the bell 3 times
             print("\a", end="", flush=True)
             time.sleep(0.3)
+            
+    def _send_notification(self, title, message, sound=None):
+        """Send desktop notification if available and enabled"""
+        if not self.settings.enable_notifications or not NOTIFICATIONS_AVAILABLE:
+            return
+            
+        try:
+            if platform.system() == 'Darwin':  # macOS
+                # Available sounds on macOS: Basso, Blow, Bottle, Frog, Funk, Glass, Hero, Morse, Ping, Pop, Purr, 
+                # Sosumi, Submarine, Tink, etc.
+                notification_sound = sound or 'Ping'
+                pync.notify(message, title=title, sound=notification_sound, 
+                           appIcon='🍅', contentImage='🍅')
+        except Exception as e:
+            print(f"Failed to send notification: {e}", file=sys.stderr)
 
     def get_display_color(self):
         """Get the color based on the current state"""
@@ -425,6 +495,14 @@ def parse_arguments():
     parser.add_argument('--debug', type=int, default=1, 
                         help='Debug mode with accelerated timing. Use values like 10, 20, 60 to speed up time (default: 1)')
     
+    # Desktop notification flags
+    notifications_group = parser.add_argument_group('Desktop notifications')
+    notifications_group.add_argument('--notify', action='store_true', dest='enable_notifications',
+                        help='Enable desktop notifications (default if supported)')
+    notifications_group.add_argument('--no-notify', action='store_false', dest='enable_notifications',
+                        help='Disable desktop notifications')
+    parser.set_defaults(enable_notifications=True)
+    
     return parser.parse_args()
 
 def main():
@@ -437,7 +515,8 @@ def main():
         short_break_duration=args.short_break * 60,
         long_break_duration=args.long_break * 60,
         cycles_before_long_break=args.cycles,
-        time_acceleration=args.debug
+        time_acceleration=args.debug,
+        enable_notifications=args.enable_notifications and NOTIFICATIONS_AVAILABLE
     )
     
     print(f"{Color.BOLD}🍅 Pomodoro CLI 🍅{Color.RESET}")
@@ -450,6 +529,15 @@ def main():
     # Show debug mode if active
     if args.debug > 1:
         print(f"{Color.YELLOW}- DEBUG MODE: Time accelerated {args.debug}x{Color.RESET}")
+        
+    # Show notification status
+    if settings.enable_notifications:
+        print(f"{Color.GREEN}- Desktop notifications: Enabled{Color.RESET}")
+    else:
+        if args.enable_notifications and not NOTIFICATIONS_AVAILABLE:
+            print(f"{Color.YELLOW}- Desktop notifications: Not available (missing pync){Color.RESET}")
+        else:
+            print(f"- Desktop notifications: Disabled")
         
     print("\nPress any key to continue...")
     

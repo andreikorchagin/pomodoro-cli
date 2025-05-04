@@ -6,7 +6,7 @@ A beautiful command line Pomodoro Timer written in Python.
 
 - Beautiful ASCII tomato art that changes color based on the current phase
 - Progress bar visualization
-- Terminal bell notifications at the end of each phase
+- Terminal bell and desktop notifications at phase transitions
 - Two interface modes: curses (default) and terminal
 - Customizable work/break durations via command line arguments
 - Debug mode for accelerated timing (useful for testing)
@@ -20,7 +20,13 @@ git clone https://github.com/andreikorchagin/pomodoro-cli.git
 cd pomodoro-cli
 ```
 
-No additional dependencies required beyond Python 3.
+### Dependencies
+
+- **Required**: Python 3
+- **Optional**: `pync` for macOS desktop notifications
+  ```bash
+  pip install pync
+  ```
 
 ## Usage
 
@@ -32,11 +38,20 @@ python3 pomodoro.py
 
 ### Command Line Options
 
+#### Timer Settings
 - `--work N`: Set work duration in minutes (default: 25)
 - `--short-break N`: Set short break duration in minutes (default: 5)
 - `--long-break N`: Set long break duration in minutes (default: 15)
 - `--cycles N`: Set number of work cycles before a long break (default: 4)
+
+#### Interface Options
 - `--no-curses`: Use simple terminal mode instead of curses interface
+
+#### Notification Options
+- `--notify`: Enable desktop notifications (default if supported)
+- `--no-notify`: Disable desktop notifications
+
+#### Development/Testing
 - `--debug N`: Enable debug mode with time acceleration factor N (e.g., 10, 20, 60)
 
 ### Curses vs Terminal Mode
@@ -66,7 +81,24 @@ python3 pomodoro.py --no-curses
 
 # Run with time accelerated by 60x (for testing)
 python3 pomodoro.py --debug 60
+
+# Disable desktop notifications
+python3 pomodoro.py --no-notify
 ```
+
+### Desktop Notifications
+
+On macOS, the app can display desktop notifications for:
+- Work session completion
+- Break completion
+- One-minute warning before work session ends
+
+To enable this feature, install the optional `pync` dependency:
+```bash
+pip install pync
+```
+
+Notifications will automatically work if the dependency is installed. Use the `--no-notify` flag to disable them.
 
 ### Controls
 
