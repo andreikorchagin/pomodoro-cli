@@ -1,0 +1,6 @@
+# Required dependencies
+# None - Python's standard library is sufficient for basic functionality
+
+# Optional dependencies
+# For macOS desktop notifications
+pync>=2.0.3; sys_platform == 'darwin'

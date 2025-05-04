@@ -21,6 +21,11 @@ try:
         import pync
         NOTIFICATIONS_AVAILABLE = True
 except ImportError:
+    # Provide helpful message if pync is not installed
+    if platform.system() == 'Darwin':
+        print("NOTE: For macOS desktop notifications, install pync:\n"
+              "pip install pync\n"
+              "or run: pip install -r requirements.txt")
     pass
 
 # ANSI color codes

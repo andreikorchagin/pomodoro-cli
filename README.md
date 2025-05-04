@@ -24,9 +24,26 @@ cd pomodoro-cli
 
 - **Required**: Python 3
 - **Optional**: `pync` for macOS desktop notifications
-  ```bash
-  pip install pync
-  ```
+
+#### Quick Install
+
+There are two easy ways to install all dependencies:
+
+**Option 1**: Use the included installation helper script:
+
+```bash
+python3 install_deps.py
+```
+
+This will guide you through the installation process with helpful messages.
+
+**Option 2**: Use pip directly:
+
+```bash
+pip install -r requirements.txt
+```
+
+Both methods will automatically install the appropriate dependencies for your platform.
 
 ## Usage
 
@@ -93,12 +110,7 @@ On macOS, the app can display desktop notifications for:
 - Break completion
 - One-minute warning before work session ends
 
-To enable this feature, install the optional `pync` dependency:
-```bash
-pip install pync
-```
-
-Notifications will automatically work if the dependency is installed. Use the `--no-notify` flag to disable them.
+The `pync` dependency will be automatically installed on macOS when you run `pip install -r requirements.txt`. Notifications will automatically work if the dependency is installed. Use the `--no-notify` flag to disable them.
 
 ### Controls
 
